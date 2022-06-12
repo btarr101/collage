@@ -27,14 +27,12 @@ class ImageCollection:
             pop_id = self.q[-1]
             del self.loadedData[pop_id]
             self.q.pop()
-            print("Freed loaded image ", pop_id)
 
         # load an unloaded image
         self.q.insert(0, image_id)
         fimage = Image.open(self.image_paths[image_id])
         fimage.load()
         self.loadedData[image_id] = np.asarray(fimage, dtype="int32")
-        print("Loaded new image ", image_id)
 
         return self.loadedData[image_id]
 
