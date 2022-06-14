@@ -1,39 +1,39 @@
 import numpy as np
 from PIL import Image
-from matplotlib import pyplot as plt
 
 import config
 import util
 
-def genTarget(image : np.array, sidecnt : int) -> np.array:
-    '''
+
+def gen_target(image: np.array, side_count: int) -> np.array:
+    """
     Generates a target to collage for.
-    '''
-    cnt = sidecnt**2
+    """
+    cnt = side_count ** 2
     target = np.zeros(shape=(cnt, 3), dtype='float')
 
     rows = len(image)
     cols = len(image[0])
-    subrows = rows // sidecnt
-    subcols = cols // sidecnt
+    sub_rows = rows // side_count
+    sub_cols = cols // side_count
 
     for i in range(cnt):
-        r = i // sidecnt
-        c = i % sidecnt
+        r = i // side_count
+        c = i % side_count
 
-        block = image[r*subrows:(r+1)*subrows,
-                      c*subcols:(c+1)*subcols]
-        target[i] = np.mean(block, axis=(0,1))
+        block = image[r * sub_rows:(r + 1) * sub_rows, c * sub_cols:(c + 1) * sub_cols]
+        target[i] = np.mean(block, axis=(0, 1))
     return target
 
-def genMap(target : np.array, averages : np.array) -> np.array:
-    '''
+
+def gen_map(target: np.array, averages: np.array) -> np.array:
+    """
     Generates a collage mapping for the target image.
-    '''
+    """
     target_cnt = len(target)
 
     residuals = [float('inf') for i in range(target_cnt)]
-    collageMap = np.full(shape=target_cnt, fill_value=-1, dtype='int32')
+    collage_map = np.full(shape=target_cnt, fill_value=-1, dtype='int32')
     image_q = list(range(len(averages)))
 
     while len(image_q) > 0:
@@ -43,15 +43,15 @@ def genMap(target : np.array, averages : np.array) -> np.array:
         best = -1
         best_residual = float('inf')
 
-        for challenger, subtarget_avg in enumerate(target):
-            challenger_residual = np.linalg.norm(subtarget_avg - avg)
+        for challenger, sub_target_avg in enumerate(target):
+            challenger_residual = np.linalg.norm(sub_target_avg - avg)
 
             # if worse than best, skip
-            if (challenger_residual > best_residual):
+            if challenger_residual > best_residual:
                 continue
 
             # if taken, skip if I'm a worse fit
-            if collageMap[challenger] != -1:
+            if collage_map[challenger] != -1:
                 if residuals[challenger] <= challenger_residual:
                     continue
 
@@ -64,68 +64,75 @@ def genMap(target : np.array, averages : np.array) -> np.array:
             continue
 
         # kick off other
-        if collageMap[best] != -1:
-            image_q.append(collageMap[best])
+        if collage_map[best] != -1:
+            image_q.append(collage_map[best])
 
         # assign me
-        collageMap[best] = i
+        collage_map[best] = i
         residuals[best] = best_residual
-    return collageMap
+    return collage_map
 
-def genTiles(shape : tuple, collageMap : np.array, data : util.ImageCollection) -> Image:
-    '''
+
+def gen_tiles(shape: tuple, collage_map: np.array, data: util.ImageCollection) -> Image:
+    """
     Generates the final tiling for the source image corresponding to
     a generated collage map.
-    '''
-    sidecnt = int(len(collageMap) ** 0.5)
+    """
+    side_count = int(len(collage_map) ** 0.5)
 
     tiling = Image.new(mode="RGB", size=(shape[1], shape[0]))
-    subrows = shape[0] // sidecnt
-    subcols = shape[1] // sidecnt
+    sub_rows = shape[0] // side_count
+    sub_cols = shape[1] // side_count
 
-    for pos in util.progressBar(range(len(collageMap)), name="Copying data"):
-        i = collageMap[pos]
+    for pos in util.progress_bar(range(len(collage_map)), name="Copying data"):
+        i = collage_map[pos]
         if i == -1:
             continue
 
-        r = pos // sidecnt
-        c = pos % sidecnt
+        r = pos // side_count
+        c = pos % side_count
 
-        tile = data.GetImageFile(i)
-        resized = tile.resize((subcols, subrows))
+        tile = data.get_image_file(i)
+        resized = tile.resize((sub_cols, sub_rows))
         tile.close()
 
-        topleft = (c*subcols, r*subrows)
-        tiling.paste(resized, topleft)
+        top_left = (c * sub_cols, r * sub_rows)
+        tiling.paste(resized, top_left)
         resized.close()
 
     return tiling
 
-def main():
-    '''
-    Runs the entire pipeline, given averages have been generated
-    '''
 
-    targets_indices = [10]
-    sidecnt = 7
+def main():
+    """
+    Runs the entire pipeline, given averages have been generated
+    """
+
+    targets_indices = None
+    side_count = 8
 
     preprocessed = np.loadtxt(config.preprocessed_file)
-    data = util.ImageCollection().FromDir(config.image_dir)
+    data = util.ImageCollection().from_dir(config.image_dir)
+
+    targets_indices = list(range(len(data)))
 
     for i in targets_indices:
         print("Collage", str(i) + ":")
         print("Generating target...")
-        image = data.GetData(i)
-        target = genTarget(image, sidecnt)
+        image = data.get_image_data(i)
+        target = gen_target(image, side_count)
         print(target)
         print("Generating map...")
-        collageMap = genMap(target, preprocessed)
-        print(collageMap)
+        collage_map = gen_map(target, preprocessed)
+        print(collage_map)
 
         # copy the data over
-        tiling = genTiles(image.shape, collageMap, data)
-        tiling.show()
+        tiling = gen_tiles(image.shape, collage_map, data)
+        numpy_collage = ((image + np.array(tiling, dtype='float')) / 2).astype(np.uint8)
+        collage = Image.fromarray(numpy_collage, mode='RGB')
+        #collage.show()
+        collage.save(config.collage_files(i))
+
 
 if __name__ == "__main__":
     main()
-
