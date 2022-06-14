@@ -1,7 +1,8 @@
 # Custom
-/Images
-*.jpg
-/collages
+data/*.txt
+data/images/*
+data/collages/*
+.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
