@@ -122,8 +122,8 @@ def main() -> None:
         preprocessed = {key: np.array(val) for key, val in json.load(f).items()}
 
     # booting up the dropbox connections
-    images = dropboxManager.ImageCollection(config.dbx_access_token, config.image_path)
-    collages = dropboxManager.ImageCollection(config.dbx_access_token, config.collage_path)
+    images = dropboxManager.ImageCollection(config.dbx_access_token, config.image_path, config.local_tmp_path)
+    collages = dropboxManager.ImageCollection(config.dbx_access_token, config.collage_path, config.local_tmp_path)
 
     targets = images.get_filenames()
 

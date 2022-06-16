@@ -1,8 +1,6 @@
 # Custom
 tmp/*
-
-# contains sensitive information
-./config.py
+config.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

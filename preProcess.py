@@ -26,7 +26,7 @@ def main() -> None:
     """
     Loads images from dropbox and saves preprocessed data in a json file for later use.
     """
-    images = dropboxManager.ImageCollection(config.dbx_access_token, path=config.image_path)
+    images = dropboxManager.ImageCollection(config.dbx_access_token, config.image_path, config.local_tmp_path)
     preprocessed = preprocess_images(images)
 
     with open(config.preprocessed_file, "w") as outfile:
