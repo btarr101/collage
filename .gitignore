@@ -1,8 +1,8 @@
 # Custom
-data/*.txt
-data/images/*
-data/collages/*
-.jpg
+tmp/*
+
+# contains sensitive information
+./config.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

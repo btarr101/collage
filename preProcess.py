@@ -1,32 +1,36 @@
 import numpy as np
+import json
 
 import config
 import util
+import dropboxManager
 
 
-def preprocess_images(img_data: util.ImageCollection) -> np.array:
+def preprocess_images(images: dropboxManager.ImageCollection, prev: dict = dict()) -> dict:
     """
-    Generates array of data that represents an images.
+    Generates a dictionary of preprocessed image data loaded.
     """
-    img_count = len(img_data)
-    averages = np.zeros(shape=(img_count, 3))
+    averages = prev.copy()
 
-    # Computing a list of averages for the images
-    for i in util.progress_bar(range(img_count), name="Averages"):
-        data = img_data.get_image_data(i)
-        averages[i] = np.average(data, axis=(0, 1))
+    # Computing a dictionary of averages for the images
+    for filename in util.progress_bar(images.get_filenames(), name="Averages"):
+        if filename in averages:
+            continue
+        data = images.get_image_nparray(filename)
+        averages[filename] = tuple(np.average(data, axis=(0, 1)))
 
     return averages
 
 
 def main() -> None:
     """
-    Saves the data in a file for later use.
-    Gets parameters from config.py.
+    Loads images from dropbox and saves preprocessed data in a json file for later use.
     """
-    img_data = util.ImageCollection(max_size=20).from_dir(config.image_dir)
-    preprocessed = preprocess_images(img_data)
-    np.savetxt(config.preprocessed_file, preprocessed, fmt="%f")
+    images = dropboxManager.ImageCollection(config.dbx_access_token, path=config.image_path)
+    preprocessed = preprocess_images(images)
+
+    with open(config.preprocessed_file, "w") as outfile:
+        json.dump(preprocessed, outfile)
 
 
 if __name__ == "__main__":

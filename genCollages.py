@@ -1,7 +1,10 @@
 import numpy as np
 from PIL import Image
 
+import json
+
 import config
+import dropboxManager
 import util
 
 
@@ -26,19 +29,22 @@ def gen_target(image: np.array, side_count: int) -> np.array:
     return target
 
 
-def gen_map(target: np.array, averages: np.array) -> np.array:
+def gen_map(target: np.array, averages: dict) -> list:
     """
     Generates a collage mapping for the target image.
     """
     target_cnt = len(target)
 
     residuals = [float('inf') for i in range(target_cnt)]
-    collage_map = np.full(shape=target_cnt, fill_value=-1, dtype='int32')
+    index_map = np.full(shape=target_cnt, fill_value=-1, dtype='int')
+
+    keys = list(averages.keys())
+    averages_indexed = list(averages.values())
     image_q = list(range(len(averages)))
 
     while len(image_q) > 0:
         i = image_q.pop(0)
-        avg = averages[i]
+        avg = averages_indexed[i]
 
         best = -1
         best_residual = float('inf')
@@ -51,7 +57,7 @@ def gen_map(target: np.array, averages: np.array) -> np.array:
                 continue
 
             # if taken, skip if I'm a worse fit
-            if collage_map[challenger] != -1:
+            if index_map[challenger] != -1:
                 if residuals[challenger] <= challenger_residual:
                     continue
 
@@ -64,16 +70,18 @@ def gen_map(target: np.array, averages: np.array) -> np.array:
             continue
 
         # kick off other
-        if collage_map[best] != -1:
-            image_q.append(collage_map[best])
+        if index_map[best] != -1:
+            image_q.append(index_map[best])
 
         # assign me
-        collage_map[best] = i
+        index_map[best] = i
         residuals[best] = best_residual
+
+    collage_map = [keys[index] for index in index_map]
     return collage_map
 
 
-def gen_tiles(shape: tuple, collage_map: np.array, data: util.ImageCollection) -> Image:
+def gen_tiles(shape: tuple, collage_map: list, images: dropboxManager.ImageCollection) -> Image:
     """
     Generates the final tiling for the source image corresponding to
     a generated collage map.
@@ -92,7 +100,7 @@ def gen_tiles(shape: tuple, collage_map: np.array, data: util.ImageCollection) -
         r = pos // side_count
         c = pos % side_count
 
-        tile = data.get_image_file(i)
+        tile = images.get_image(i)
         resized = tile.resize((sub_cols, sub_rows))
         tile.close()
 
@@ -103,35 +111,37 @@ def gen_tiles(shape: tuple, collage_map: np.array, data: util.ImageCollection) -
     return tiling
 
 
-def main():
+def main() -> None:
     """
-    Runs the entire pipeline, given averages have been generated
+    Runs the entire pipeline, given images have been 'preprocessed'.
     """
-
-    targets_indices = None
     side_count = 8
 
-    preprocessed = np.loadtxt(config.preprocessed_file)
-    data = util.ImageCollection().from_dir(config.image_dir)
+    # loading the preprocessed data
+    with open(config.preprocessed_file) as f:
+        preprocessed = {key: np.array(val) for key, val in json.load(f).items()}
 
-    targets_indices = list(range(len(data)))
+    # booting up the dropbox connections
+    images = dropboxManager.ImageCollection(config.dbx_access_token, config.image_path)
+    collages = dropboxManager.ImageCollection(config.dbx_access_token, config.collage_path)
 
-    for i in targets_indices:
-        print("Collage", str(i) + ":")
+    targets = images.get_filenames()
+
+    for filename in targets:
+        print("Collage ("+filename+"):")
         print("Generating target...")
-        image = data.get_image_data(i)
-        target = gen_target(image, side_count)
+        image_arr = images.get_image_nparray(filename)
+        target = gen_target(image_arr, side_count)
         print(target)
         print("Generating map...")
         collage_map = gen_map(target, preprocessed)
         print(collage_map)
 
         # copy the data over
-        tiling = gen_tiles(image.shape, collage_map, data)
-        numpy_collage = ((image + np.array(tiling, dtype='float')) / 2).astype(np.uint8)
+        tiling = gen_tiles(image_arr.shape, collage_map, images)
+        numpy_collage = ((image_arr + np.array(tiling, dtype='float')) / 2).astype(np.uint8)
         collage = Image.fromarray(numpy_collage, mode='RGB')
-        #collage.show()
-        collage.save(config.collage_files(i))
+        collages.add_image("collage_"+filename, collage)
 
 
 if __name__ == "__main__":
