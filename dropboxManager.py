@@ -2,6 +2,7 @@ import os
 
 import dropbox
 import dropbox.exceptions
+import dropbox.files
 
 from PIL import Image
 import io
@@ -19,7 +20,7 @@ class ImageCollection:
 
         # load the cache
         self.cache_dir = cache_dir
-        self.cached_filenames = set(os.listdir(cache_dir)).union(self.get_filenames())
+        self.cached_filenames = set(os.listdir(cache_dir)).intersection(self.get_filenames())
 
     def get_filenames(self) -> set:
         """
@@ -67,7 +68,7 @@ class ImageCollection:
             byte_arr = output.getvalue()
 
         try:
-            res = self.dbx.files_upload(byte_arr, self.path + '/' + filename)
+            res = self.dbx.files_upload(byte_arr, self.path + '/' + filename, mode=dropbox.files.WriteMode.overwrite)
         except dropbox.exceptions.ApiError as err:
             print('API error:', err)
             return None

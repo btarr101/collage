@@ -132,10 +132,8 @@ def main() -> None:
         print("Generating target...")
         image_arr = images.get_image_nparray(filename)
         target = gen_target(image_arr, side_count)
-        print(target)
         print("Generating map...")
         collage_map = gen_map(target, preprocessed)
-        print(collage_map)
 
         # copy the data over
         tiling = gen_tiles(image_arr.shape, collage_map, images)

@@ -9,6 +9,8 @@ import dropboxManager
 def preprocess_images(images: dropboxManager.ImageCollection, prev: dict = dict()) -> dict:
     """
     Generates a dictionary of preprocessed image data loaded.
+    @type images: dropboxManager.ImageCollection
+    @param prev:
     """
     averages = prev.copy()
 
