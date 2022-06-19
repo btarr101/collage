@@ -1,5 +1,5 @@
 # Custom
-tmp/*
+cache/*
 config.py
 
 # Byte-compiled / optimized / DLL files

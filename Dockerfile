@@ -1,15 +1,9 @@
-FROM python:3.10
+FROM python:latest
 
-WORKDIR ../collage
-
-ADD config.py .
-ADD util.py .
-ADD dropboxManager.py .
-ADD preProcess.py .
-ADD genCollages.py .
-ADD main.py .
-RUN mkdir "tmp"
+WORKDIR /usr/src/collage
 
 RUN pip install numpy pillow dropbox
+
+COPY . .
 
 CMD ["python", "./main.py"]
