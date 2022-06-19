@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 from PIL import Image
 
@@ -118,8 +120,11 @@ def main() -> None:
     side_count = 8
 
     # loading the preprocessed data
-    with open(config.preprocessed_file) as f:
-        preprocessed = {key: np.array(val) for key, val in json.load(f).items()}
+    preprocessed = dict()
+
+    if os.path.exists(config.preprocessed_file):
+        with open(config.preprocessed_file) as f:
+            preprocessed = {key: np.array(val) for key, val in json.load(f).items()}
 
     # booting up the dropbox connections
     images = dropboxManager.ImageCollection(config.dbx_access_token, config.image_path, config.local_tmp_path)
