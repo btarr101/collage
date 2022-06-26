@@ -2,8 +2,16 @@ FROM python:latest
 
 WORKDIR /usr/src/collage
 
-RUN pip install numpy pillow dropbox
+RUN pip install --upgrade pip
+
+RUN pip install\
+    numpy   \
+    pillow  \
+    dropbox \
+    beautifulsoup4 \
+    defopt  \
+    progressbar2
 
 COPY . .
 
-CMD ["python", "./main.py"]
+WORKDIR .
