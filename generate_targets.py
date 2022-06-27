@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -51,16 +52,20 @@ def main(*, image_or_image_dir: Path, side_count: int) -> None:
            for example a side count of 4 would result in having 16 sub-targets because 4 x 4 is 16.
     """
 
+    if not image_or_image_dir.exists():
+        print(f"Error: {image_or_image_dir} directory or file does not exist! Targets not generated.")
+        sys.exit(1)
+
     if image_or_image_dir.is_dir():
         image_paths = list(image_or_image_dir.glob('*'))
-        out_dir = image_or_image_dir.with_name(image_or_image_dir.name+'.targets')
+        out_dir = Path.cwd() / (image_or_image_dir.name+'.targets')
         if not out_dir.exists():
             out_dir.mkdir(exist_ok=False)
     else:
         image_paths = [image_or_image_dir]
-        out_dir = Path('.')
+        out_dir = Path.cwd()
 
-    print(f"Generating from {image_or_image_dir}:")
+    print(f"Generating targets from {image_or_image_dir}:")
     for image_path in progressbar(image_paths):
         image = Image.open(image_path, "r")
         arr = create_array(image, side_count)

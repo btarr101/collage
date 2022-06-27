@@ -1,6 +1,7 @@
 import json
-from typing import Iterable
+import sys
 from pathlib import Path
+from typing import Iterable
 
 import numpy as np
 import progressbar
@@ -39,12 +40,16 @@ def main(*, image_dir: Path) -> None:
     :param image_dir: the directory where the images are stored.
     """
 
+    if not image_dir.exists():
+        print(f"Error: {image_dir} directory does not exist! Sources not generated.")
+        sys.exit(1)
+
     image_paths = image_dir.glob('*')
 
-    print(f"Generating from {image_dir}:")
+    print(f"Generating sources from {image_dir}:")
     source_dict = create_dictionary(image_paths)
 
-    output = image_dir.with_name(image_dir.name + '.sources.json')
+    output = Path.cwd() / (image_dir.name + '.sources.json')
 
     with open(output, 'w') as source_json:
         json.dump(source_dict, source_json)

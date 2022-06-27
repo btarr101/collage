@@ -1,9 +1,10 @@
+import sys
 from pathlib import Path
-import numpy as np
 
+import numpy as np
+from PIL import Image
 from defopt import run
 from progressbar import progressbar
-from PIL import Image
 
 
 def create_image(mapping: np.ndarray, image: Image) -> Image:
@@ -49,6 +50,10 @@ def main(*, map_or_map_dir: Path, count: int = 0) -> None:
                   the collage with the best residual set this to 1.
     """
 
+    if not map_or_map_dir.exists():
+        print(f"Error {map_or_map_dir} directory or file does not exist! Collages not generated.")
+        sys.exit(1)
+
     if map_or_map_dir.is_dir():
         map_paths = list(map_or_map_dir.glob('*'))
         out_dir = map_or_map_dir.with_name(map_or_map_dir.name[:-len('.maps')] + '.collages')
@@ -65,7 +70,7 @@ def main(*, map_or_map_dir: Path, count: int = 0) -> None:
 
     for i, map_path in enumerate(map_paths):
 
-        print(f"Generating from {map_path} ({i+1} of {len(map_paths)}):")
+        print(f"Generating collage from {map_path} ({i+1} of {len(map_paths)}):")
 
         # noinspection PyTypeChecker
         with np.load(map_path, allow_pickle=True) as npz:

@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -80,6 +81,14 @@ def main(*, target_or_target_dir: Path, sources_path: Path) -> None:
     :param sources_path: the json of sources for the images.
     """
 
+    if not target_or_target_dir.exists():
+        print(f"Error: {target_or_target_dir} directory or file does not exist! Maps not generated.")
+        sys.exit(1)
+
+    if not sources_path.exists():
+        print(f"Error: {sources_path} file does not exist! Maps not generated.")
+        sys.exit(1)
+
     if target_or_target_dir.is_dir():
         target_paths = list(target_or_target_dir.glob('*'))
         out_dir = target_or_target_dir.with_name(target_or_target_dir.name[:-len('.targets')] + '.maps')
@@ -89,7 +98,7 @@ def main(*, target_or_target_dir: Path, sources_path: Path) -> None:
         target_paths = [target_or_target_dir]
         out_dir = Path('.')
 
-    print(f"Generating from {target_or_target_dir}:")
+    print(f"Generating maps from {target_or_target_dir}:")
     for target_path in progressbar(target_paths):
 
         with np.load(target_path) as npz:
